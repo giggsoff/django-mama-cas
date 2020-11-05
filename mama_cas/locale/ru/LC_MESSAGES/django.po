@@ -20,7 +20,7 @@ msgstr ""
 
 #: cas.py:106
 msgid "You have been successfully logged out"
-msgstr "Вы успешно вошли"
+msgstr "Вы успешно вышли"
 
 #: forms.py:15
 msgid "Username"
