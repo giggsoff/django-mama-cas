@@ -32,9 +32,7 @@ from mama_cas.utils import clean_service_url
 from mama_cas.utils import redirect
 from mama_cas.utils import to_bool
 
-
 logger = logging.getLogger(__name__)
-
 
 login_view_template_name = getattr(settings,
                                    'MAMA_CAS_LOGIN_TEMPLATE',
@@ -166,14 +164,22 @@ class WarnView(NeverCacheMixin, LoginRequiredMixin, TemplateView):
             return redirect('cas_login')
 
         msg = _("Do you want to access %(service)s as %(user)s?") % {
-                'service': clean_service_url(service),
-                'user': request.user}
+            'service': clean_service_url(service),
+            'user': request.user}
         messages.info(request, msg)
         kwargs['service'] = add_query_params(service, {'ticket': ticket})
         return super(WarnView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         return kwargs
+
+
+def delete_cookies(request, responce):
+    cookies = request.COOKIES
+    for key in cookies:
+        logger.error(key)
+        logger.error(cookies[key])
+        responce.delete_cookie(key)
 
 
 class LogoutView(NeverCacheMixin, View):
@@ -188,6 +194,7 @@ class LogoutView(NeverCacheMixin, View):
     ``MAMA_CAS_FOLLOW_LOGOUT_URL`` is ``True``, the client will be
     redirected to the specified service URL. [CAS 3.0]
     """
+
     def get(self, request, *args, **kwargs):
         service = request.GET.get('service')
         if not service:
@@ -195,8 +202,12 @@ class LogoutView(NeverCacheMixin, View):
         follow_url = getattr(settings, 'MAMA_CAS_FOLLOW_LOGOUT_URL', True)
         logout_user(request)
         if service and follow_url:
-            return redirect(service)
-        return redirect('cas_login')
+            responce = redirect(service)
+            delete_cookies(request, responce)
+            return responce
+        responce = redirect('cas_login')
+        delete_cookies(request, responce)
+        return responce
 
 
 class ValidateView(NeverCacheMixin, View):
@@ -213,6 +224,7 @@ class ValidateView(NeverCacheMixin, View):
     ``ServiceTicket`` was issued from the presentation of the user's
     primary credentials, not from an existing single sign-on session.
     """
+
     def get(self, request, *args, **kwargs):
         service = request.GET.get('service')
         ticket = request.GET.get('ticket')
