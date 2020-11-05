@@ -174,12 +174,10 @@ class WarnView(NeverCacheMixin, LoginRequiredMixin, TemplateView):
         return kwargs
 
 
-def delete_cookies(request, responce):
+def delete_cookies(request, response):
     cookies = request.COOKIES
     for key in cookies:
-        logger.error(key)
-        logger.error(cookies[key])
-        responce.delete_cookie(key)
+        response.delete_cookie(key)
 
 
 class LogoutView(NeverCacheMixin, View):
@@ -202,12 +200,12 @@ class LogoutView(NeverCacheMixin, View):
         follow_url = getattr(settings, 'MAMA_CAS_FOLLOW_LOGOUT_URL', True)
         logout_user(request)
         if service and follow_url:
-            responce = redirect(service)
-            delete_cookies(request, responce)
-            return responce
-        responce = redirect('cas_login')
-        delete_cookies(request, responce)
-        return responce
+            response = redirect(service)
+            delete_cookies(request, response)
+            return response
+        response = redirect('cas_login')
+        delete_cookies(request, response)
+        return response
 
 
 class ValidateView(NeverCacheMixin, View):
